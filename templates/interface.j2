@@ -1,0 +1,4 @@
+auto {{ networking_interface }}
+iface {{ networking_interface }} inet dhcp
+  post-up ip route add default via {{ networking_gateway }}
+  dns-nameservers {{ networking_dns }}

@@ -1,2 +1,33 @@
 ---
 # tasks file for networking
+
+- name: Check for existing default route
+  ansible.builtin.command:
+    cmd: ip r
+  register: route_output
+
+- name: Set default route if absent
+  ansible.builtin.command:
+    cmd: "ip r add default via {{ networking_gateway }}"
+  when: route_output.stdout.find('default') == -1
+  become: True
+
+- name: Ensure DNS Server is set for running system
+  ansible.builtin.lineinfile:
+    path: /etc/resolv.conf
+    line: "nameserver {{ networking_dns }}"
+    state: present
+  become: True
+
+- name: Regather facts
+  ansible.builtin.setup:
+  when: route_output.stdout.find('default') == -1
+
+- name: Copy interface config
+  ansible.builtin.template:
+    src: interface.j2
+    dest: "/etc/network/interfaces.d/{{ networking_interface }}"
+    owner: root
+    group: root
+    mode: 0644
+  become: True
